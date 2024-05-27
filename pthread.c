@@ -9,8 +9,7 @@
 #define NPISTAS 2        // Numero de pistas de carros
 #define NTHREADS 2       // Numero de carros por pista
 #define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
-#define FLUXO_CARROS \
-  1  // Tempo que um carro demora para atravessar a ponte (segundos)
+#define FLUXO_CARROS 1  // Tempo que um carro demora para atravessar a ponte (segundos)
 #define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
 
 // Declaracao da struct da lista encadeada
