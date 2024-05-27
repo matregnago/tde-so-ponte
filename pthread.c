@@ -5,15 +5,15 @@
 #include <time.h>
 #include <unistd.h>
 
-#define NPISTAS 3
-#define NTHREADS 5
-#define TRAVAR_PONTE 5
-#define FLUXO_CARROS 1
-#define TEMPO_TRAVAR_PONTE 5
+// Variaveis de configuracao
+#define NPISTAS 2        // Numero de pistas de carros
+#define NTHREADS 2       // Numero de carros por pista
+#define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
+#define FLUXO_CARROS \
+  1  // Tempo que um carro demora para atravessar a ponte (segundos)
+#define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
 
-pthread_mutex_t ponte_mutex;
-int executados = 0;
-
+// Declaracao da struct da lista encadeada
 struct carro {
   pthread_t thread;
   int thread_id;
@@ -31,21 +31,19 @@ struct pista {
 };
 typedef struct pista PISTA;
 
+// Variaveis globais
 PISTA* pistas_inicio = NULL;
+pthread_mutex_t ponte_mutex;
+int executados = 0;
 
-void contar_fila_carros() {
-  PISTA* aux_pista = pistas_inicio;
-  int cont;
-  while (aux_pista != NULL) {
-    cont = 0;
-    CARRO* aux = aux_pista->inicio;
-    while (aux != NULL) {
-      cont++;
-      aux = aux->prox;
-    }
-    printf(" Pista %d: %d carros\n", aux_pista->num_pista, cont);
-    aux_pista = aux_pista->prox;
-  }
+// Manipulacao da estrutura da lista
+CARRO* criar_carro(int i, int pode_passar, int num_fila) {
+  CARRO* novo = (CARRO*)malloc(sizeof(CARRO));
+  novo->thread_id = i;
+  novo->prox = NULL;
+  novo->pode_passar = pode_passar;
+  novo->num_fila = num_fila;
+  return novo;
 }
 
 void remover_carro(CARRO* carro) {
@@ -65,6 +63,89 @@ void remover_carro(CARRO* carro) {
   free(temp);
 }
 
+void adicionar_carro_lista(CARRO** fila, int i, int num_fila) {
+  if (*fila == NULL) {
+    *fila = criar_carro(i, 1, num_fila);
+    return;
+  }
+  CARRO* novo = criar_carro(i, 0, num_fila);
+  CARRO* aux = *fila;
+  while (aux->prox != NULL) {
+    aux = aux->prox;
+  }
+  aux->prox = novo;
+}
+
+PISTA* criar_pista(int i) {
+  PISTA* nova = (PISTA*)malloc(sizeof(PISTA));
+  nova->num_pista = i;
+  nova->prox = NULL;
+  nova->inicio = NULL;
+  return nova;
+}
+
+// Inicializacao das pistas e das filas de carros
+void iniciar_pistas() {
+  int i;
+  pistas_inicio = criar_pista(1);
+  PISTA* aux = pistas_inicio;
+  for (i = 1; i < NPISTAS; i++) {
+    aux->prox = criar_pista(i + 1);
+    aux = aux->prox;
+  }
+}
+
+void encher_pistas() {
+  int i, num_carro = 1;
+  PISTA* aux_pista = pistas_inicio;
+  CARRO* aux_carro;
+  while (aux_pista != NULL) {
+    for (i = 0; i < NTHREADS; i++) {
+      adicionar_carro_lista(&aux_pista->inicio, num_carro,
+                            aux_pista->num_pista);
+      num_carro++;
+    }
+    aux_pista = aux_pista->prox;
+  }
+}
+
+// Prints iniciais
+void print_fila_carros(CARRO* fila) {
+  CARRO* aux = fila;
+  while (aux != NULL) {
+    printf(" - Carro %d\n", aux->thread_id);
+    aux = aux->prox;
+  }
+}
+
+void print_pistas() {
+  PISTA* aux = pistas_inicio;
+  while (aux != NULL) {
+    printf("Pista %d\n", aux->num_pista);
+    print_fila_carros(aux->inicio);
+    aux = aux->prox;
+  }
+}
+
+// Logica principal do programa
+
+// Calcula o congestionamento
+void contar_fila_carros() {
+  PISTA* aux_pista = pistas_inicio;
+  int cont;
+  while (aux_pista != NULL) {
+    cont = 0;
+    CARRO* aux = aux_pista->inicio;
+    while (aux != NULL) {
+      cont++;
+      aux = aux->prox;
+    }
+    printf(" Pista %d: %d carros\n", aux_pista->num_pista, cont);
+    aux_pista = aux_pista->prox;
+  }
+}
+
+// Trava a ponte
 void fechar_ponte() {
   printf("\nA ponte travou. Congestionamento: \n");
   contar_fila_carros();
@@ -73,6 +154,7 @@ void fechar_ponte() {
   pthread_mutex_unlock(&ponte_mutex);
 }
 
+// Funcao principal executada por cada thread
 void* cruzar_ponte(void* args) {
   CARRO* carro = (CARRO*)args;
   while (1) {
@@ -97,76 +179,7 @@ void* cruzar_ponte(void* args) {
   return NULL;
 }
 
-CARRO* create_carro(int i, int pode_passar, int num_fila) {
-  CARRO* novo = (CARRO*)malloc(sizeof(CARRO));
-  novo->thread_id = i;
-  novo->prox = NULL;
-  novo->pode_passar = pode_passar;
-  novo->num_fila = num_fila;
-  return novo;
-}
-
-void append_carro(CARRO** fila, int i, int num_fila) {
-  if (*fila == NULL) {
-    *fila = create_carro(i, 1, num_fila);
-    return;
-  }
-  CARRO* novo = create_carro(i, 0, num_fila);
-  CARRO* aux = *fila;
-  while (aux->prox != NULL) {
-    aux = aux->prox;
-  }
-  aux->prox = novo;
-}
-
-PISTA* create_pista(int i) {
-  PISTA* nova = (PISTA*)malloc(sizeof(PISTA));
-  nova->num_pista = i;
-  nova->prox = NULL;
-  nova->inicio = NULL;
-  return nova;
-}
-
-void iniciar_pistas(PISTA** inicio) {
-  int i;
-  *inicio = create_pista(1);
-  PISTA* aux = *inicio;
-  for (i = 1; i < NPISTAS; i++) {
-    aux->prox = create_pista(i + 1);
-    aux = aux->prox;
-  }
-}
-
-void encher_pistas(PISTA** inicio) {
-  int i, num_carro = 1;
-  PISTA* aux_pista = *inicio;
-  CARRO* aux_carro;
-  while (aux_pista != NULL) {
-    for (i = 0; i < NTHREADS; i++) {
-      append_carro(&aux_pista->inicio, num_carro, aux_pista->num_pista);
-      num_carro++;
-    }
-    aux_pista = aux_pista->prox;
-  }
-}
-
-void print_fila_carros(CARRO* fila) {
-  CARRO* aux = fila;
-  while (aux != NULL) {
-    printf(" - Carro %d\n", aux->thread_id);
-    aux = aux->prox;
-  }
-}
-
-void print_pistas(PISTA* inicio) {
-  PISTA* aux = inicio;
-  while (aux != NULL) {
-    printf("Pista %d\n", aux->num_pista);
-    print_fila_carros(aux->inicio);
-    aux = aux->prox;
-  }
-}
-
+// Inicializacao das threads
 void iniciar_threads() {
   PISTA* aux_pista = pistas_inicio;
   while (aux_pista != NULL) {
@@ -179,6 +192,7 @@ void iniciar_threads() {
   }
 }
 
+// Esperar threads finalizarem
 void esperar_threads() {
   PISTA* aux_pista = pistas_inicio;
   while (aux_pista != NULL) {
@@ -192,10 +206,19 @@ void esperar_threads() {
 }
 
 int main() {
+  if (NPISTAS < 1) {
+    printf("Numero de pistas precisa ser maior do que 0");
+    return -1;
+  }
+  if (NTHREADS < 1) {
+    printf("Numero de threads precisa ser maior do que 0");
+    return -1;
+  }
   pthread_mutex_init(&ponte_mutex, NULL);
-  iniciar_pistas(&pistas_inicio);
-  encher_pistas(&pistas_inicio);
-  print_pistas(pistas_inicio);
+  iniciar_pistas();
+  encher_pistas();
+  print_pistas();
+  printf("\nPassagens pela ponte: \n");
   iniciar_threads();
   esperar_threads();
   pthread_mutex_destroy(&ponte_mutex);
