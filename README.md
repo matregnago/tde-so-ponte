@@ -7,6 +7,6 @@ To do:
 - [x] Arrumar passagem de parâmetros nas funções (utiliza variável global)
 - [x] Ajustar condições especias, como configurações zeradas
 - [x] Revisar nomes das funções e possíveis otimizações
-- [ ] Ajustar todo o código de pthread para fork
+- [x] Ajustar todo o código de pthread para fork
 - [ ] Melhorar Readme
 - [ ] Preparar apresentação
