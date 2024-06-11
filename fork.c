@@ -14,8 +14,8 @@
 // Variaveis de configuracao
 #define NPISTAS 10   	// Numero de pistas de carros
 #define NPROCESS 5	// Numero de carros por pista
-#define TRAVAR_PONTE 10  // Frequencia de execucoes para travar a ponte
-#define FLUXO_CARROS 0  // Tempo que um carro demora para atravessar a ponte (segundos)
+#define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
+#define FLUXO_CARROS 1  // Tempo que um carro demora para atravessar a ponte (segundos)
 #define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
 #define PISTAS_KEY 100 // Chave memoria compartilhada de pistas
 #define CONTROLS_KEY 200 // Chave memoria compartilhada de controle
@@ -40,10 +40,10 @@ struct pista {
 typedef struct pista PISTA;
 
 // Variaveis globais
-sem_t* sem0;
-sem_t* sem1;
-int num_carro = 1;
-int lado = 0;
+sem_t* sem0; // Semaphore lado 0
+sem_t* sem1; // Semaphore lado 1
+int num_carro = 1; // Numero do carro para encher pistas
+int lado = 0; // Controla o lado da pista na pista
 
 // Manipulacao da estrutura da lista
 void criar_carro(CARRO* carro, int num, int pode_passar, int num_fila, int lado_pista) {
@@ -273,7 +273,6 @@ int main() {
   shmdt(controls);
   return 0;
 }
-
 
 
 
