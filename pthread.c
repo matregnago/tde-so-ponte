@@ -6,10 +6,10 @@
 #include <unistd.h>
 
 // Variaveis de configuracao
-#define NPISTAS 6       // Numero de pistas de carros
+#define NPISTAS 10       // Numero de pistas de carros
 #define NTHREADS 10       // Numero de carros por pista
 #define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
-#define FLUXO_CARROS 0   // Tempo que um carro demora para atravessar a ponte (segundos)
+#define FLUXO_CARROS 1   // Tempo que um carro demora para atravessar a ponte (segundos)
 #define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
 
 // Declaracao da struct da lista encadeada
@@ -97,7 +97,7 @@ void iniciar_pistas() {
     pistas_inicio = criar_pista(1, lado);
     PISTA* aux = pistas_inicio;
     for (i = 1; i < NPISTAS; i++) {
-        if (i == NPISTAS / 2) {
+        if (i == (NPISTAS / 2)) {
             lado = 1;
         }
         aux->prox = criar_pista(i + 1, lado);
@@ -129,7 +129,11 @@ void print_fila_carros(CARRO* fila) {
 
 void print_pistas() {
     PISTA* aux = pistas_inicio;
-    while (aux != NULL) {
+    printf("Lado 0: \n");
+   for(int i = 1; i <= NPISTAS; i++) {
+     if (i == (NPISTAS / 2) + 1) {
+          printf("Lado 1: \n");
+        }
         printf("Pista %d\n", aux->num_pista);
         print_fila_carros(aux->inicio);
         aux = aux->prox;
@@ -142,12 +146,16 @@ void print_pistas() {
 void contar_fila_carros() {
     PISTA* aux_pista = pistas_inicio;
     int cont;
-    while (aux_pista != NULL) {
+    printf("Lado 0: \n");
+   for(int i = 1; i <= NPISTAS; i++) {
         cont = 0;
         CARRO* aux = aux_pista->inicio;
         while (aux != NULL) {
             cont++;
             aux = aux->prox;
+        }
+         if (i == (NPISTAS / 2) + 1) {
+          printf("Lado 1: \n");
         }
         printf(" Pista %d: %d carros\n", aux_pista->num_pista, cont);
         aux_pista = aux_pista->prox;
@@ -155,8 +163,9 @@ void contar_fila_carros() {
 }
 
 // Trava a ponte
-void fechar_ponte() {
-    printf("\nA ponte travou. Congestionamento: \n");
+void fechar_ponte(int lado) {
+    printf("\n");
+    printf("O lado %d travou!.\nCongestionamento: \n", lado);
     contar_fila_carros();
     sleep(TEMPO_TRAVAR_PONTE);
     printf("A ponte destravou.\n\n");
@@ -175,7 +184,7 @@ void* cruzar_ponte(void* args) {
                 current_lado = &lado0_mutex;
             }
             pthread_mutex_lock(current_lado);
-            printf("Carro %d cruzou a ponte do lado %d\n", carro->thread_id, carro->lado);
+            printf("(lado %d) Carro %d cruzou a ponte\n", carro->lado, carro->thread_id);
             sleep(FLUXO_CARROS);
             if (carro->prox != NULL) {
                 carro->prox->pode_passar = 1;
@@ -184,7 +193,7 @@ void* cruzar_ponte(void* args) {
             executados++;
             int ponte = TRAVAR_PONTE;
             if (executados % ponte == 0) {
-                fechar_ponte();
+                fechar_ponte(carro->lado);
             }
            pthread_mutex_unlock(current_lado);
            break;

@@ -13,7 +13,7 @@
 
 // Variaveis de configuracao
 #define NPISTAS 10   	// Numero de pistas de carros
-#define NPROCESS 5	// Numero de carros por pista
+#define NPROCESS 10	// Numero de carros por pista
 #define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
 #define FLUXO_CARROS 1  // Tempo que um carro demora para atravessar a ponte (segundos)
 #define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
@@ -122,11 +122,15 @@ void encher_pistas(PISTA* pistas, CARRO* carros_base) {
 
 // Print inicial
 void print_pistas(PISTA* pistas) {
+  printf("Lado 0:\n");
   for (int i = 0; i < NPISTAS; i++) {
-	printf("Pista %d lado: %d\n", pistas[i].num_pista, pistas[i].lado);
+    if(i == NPISTAS/2){
+      	printf("\nLado 1:\n");
+  	}
+	printf(" Pista %d \n", pistas[i].num_pista);
 	CARRO* c = pistas[i].inicio;
 	while (c != NULL) {
-  	printf(" - Carro %d lado: %d\n", c->num, c->lado);
+  	printf("  - Carro %d\n", c->num);
   	c = c->prox;
 	}
   }
@@ -137,6 +141,7 @@ void print_pistas(PISTA* pistas) {
 // Calcula o congestionamento
 void contar_fila_carros(PISTA* pistas) {
   int cont;
+  printf("Lado 0:\n");
   for(int i=0; i< NPISTAS; i++) {
 	cont = 0;
 	CARRO* aux = pistas[i].inicio;
@@ -144,13 +149,17 @@ void contar_fila_carros(PISTA* pistas) {
   	cont++;
   	aux = aux->prox;
 	}
+    if(i == NPISTAS/2){
+      	printf("\nLado 1:\n");
+  	}
 	printf(" Pista %d: %d carros\n", pistas[i].num_pista, cont);
   }
 }
 
 // Trava a ponte
 void fechar_ponte(PISTA* pistas, int* controls, int lado) {
-  printf("\nO lado %d travou!. Congestionamento: \n", lado);
+  printf("\n");
+  printf("O lado %d travou!.\nCongestionamento: \n", lado);
   contar_fila_carros(pistas);
   sleep(TEMPO_TRAVAR_PONTE);
   printf("A ponte destravou.\n\n");
@@ -174,7 +183,7 @@ void cruzar_ponte(PISTA* pistas, CARRO* carro, CARRO* carros_base,int* controls)
   	num = carro->num;
   	*current_control = 1;
   	sem_wait(current_sem);
-  	printf("Carro %d lado (%d) cruzou a ponte\n", carro->num, carro->lado);
+  	printf("(lado %d) Carro %d cruzou a ponte\n", carro->lado, carro->num);
   	remover_carro(pistas, carros_base, carro);
   	controls[0]++;
   	if (controls[0] % TRAVAR_PONTE == 0) {
