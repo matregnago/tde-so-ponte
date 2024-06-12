@@ -12,13 +12,13 @@
 #include <wait.h>
 
 // Variaveis de configuracao
-#define NPISTAS 10   	// Numero de pistas de carros
-#define NPROCESS 10	// Numero de carros por pista
+#define NPISTAS 10       // Numero de pistas de carros
+#define NPROCESS 10      // Numero de carros por pista
 #define TRAVAR_PONTE 25  // Frequencia de execucoes para travar a ponte
 #define FLUXO_CARROS 1  // Tempo que um carro demora para atravessar a ponte (segundos)
 #define TEMPO_TRAVAR_PONTE 5  // Tempo que a ponte fica bloqueada
-#define PISTAS_KEY 100 // Chave memoria compartilhada de pistas
-#define CONTROLS_KEY 200 // Chave memoria compartilhada de controle
+#define PISTAS_KEY 100        // Chave memoria compartilhada de pistas
+#define CONTROLS_KEY 200      // Chave memoria compartilhada de controle
 
 // Declaracao da struct da lista encadeada
 struct carro {
@@ -40,10 +40,10 @@ struct pista {
 typedef struct pista PISTA;
 
 // Variaveis globais
-sem_t* sem0; // Semaphore lado 0
-sem_t* sem1; // Semaphore lado 1
-int num_carro = 1; // Numero do carro para encher pistas
-int lado = 0; // Controla o lado da pista na pista
+sem_t* sem0;        // Semaphore lado 0
+sem_t* sem1;        // Semaphore lado 1
+int num_carro = 1;  // Numero do carro para encher pistas
+int lado = 0;       // Controla o lado da pista na pista
 
 // Manipulacao da estrutura da lista
 void criar_carro(CARRO* carro, int num, int pode_passar, int num_fila, int lado_pista) {
@@ -59,36 +59,34 @@ void remover_carro(PISTA* pistas, CARRO* carros_base, CARRO* carro) {
   int num_carro = carro->num;
   int desl_vet_carros = 0;
   if (num_pista - 1 == 0) {
-	desl_vet_carros = num_carro - 1;
+    desl_vet_carros = num_carro - 1;
   } else {
-	desl_vet_carros = (num_carro - 1) % (NPROCESS * (num_pista - 1));
+    desl_vet_carros = (num_carro - 1) % (NPROCESS * (num_pista - 1));
   }
-
   CARRO* lista_carros_pista = &carros_base[(num_pista - 1) * NPROCESS];
   CARRO* aux = &lista_carros_pista[desl_vet_carros];
   if (aux->prox == NULL) {
-	pistas[num_pista-1].inicio = NULL;
+    pistas[num_pista - 1].inicio = NULL;
   } else {
-
-	aux->prox->pode_passar = 1;
-	pistas[num_pista - 1].inicio = aux->prox;
+    aux->prox->pode_passar = 1;
+    pistas[num_pista - 1].inicio = aux->prox;
   }
 }
 
 void adicionar_carros_a_pista(PISTA* pista, CARRO* carros_base, int lado_pista) {
   int pode_passar_val = 0;
   for (int j = 0; j < NPROCESS; j++) {
-	if (j == 0) {
-  	pode_passar_val = 1;
-	}
-	criar_carro(&carros_base[j], num_carro, pode_passar_val, pista->num_pista, lado_pista);
-	num_carro++;
-	if (j < NPROCESS - 1) {
-  	carros_base[j].prox = &carros_base[j + 1];
-	} else {
-  	carros_base[j].prox = NULL;
-	}
-	pode_passar_val = 0;
+    if (j == 0) {
+      pode_passar_val = 1;
+    }
+    criar_carro(&carros_base[j], num_carro, pode_passar_val, pista->num_pista, lado_pista);
+    num_carro++;
+    if (j < NPROCESS - 1) {
+      carros_base[j].prox = &carros_base[j + 1];
+    } else {
+      carros_base[j].prox = NULL;
+    }
+    pode_passar_val = 0;
   }
   pista->inicio = carros_base;
   pista->num_carros = NPROCESS;
@@ -105,18 +103,17 @@ void criar_pista(PISTA* pista, int i) {
 void iniciar_pistas(PISTA* pistas) {
   int i;
   for (i = 0; i < NPISTAS; i++) {
-  	if(i== NPISTAS/2){
-      	lado = 1;
-  	}
-	criar_pista(&pistas[i], i + 1);
+    if (i == NPISTAS / 2) {
+      lado = 1;
+    }
+    criar_pista(&pistas[i], i + 1);
   }
 }
 
-
 void encher_pistas(PISTA* pistas, CARRO* carros_base) {
   for (int i = 0; i < NPISTAS; i++) {
-	CARRO* current_carro = &carros_base[i * NPROCESS];
-	adicionar_carros_a_pista(&pistas[i], current_carro, pistas[i].lado);
+    CARRO* current_carro = &carros_base[i * NPROCESS];
+    adicionar_carros_a_pista(&pistas[i], current_carro, pistas[i].lado);
   }
 }
 
@@ -124,15 +121,15 @@ void encher_pistas(PISTA* pistas, CARRO* carros_base) {
 void print_pistas(PISTA* pistas) {
   printf("Lado 0:\n");
   for (int i = 0; i < NPISTAS; i++) {
-    if(i == NPISTAS/2){
-      	printf("\nLado 1:\n");
-  	}
-	printf(" Pista %d \n", pistas[i].num_pista);
-	CARRO* c = pistas[i].inicio;
-	while (c != NULL) {
-  	printf("  - Carro %d\n", c->num);
-  	c = c->prox;
-	}
+    if (i == NPISTAS / 2) {
+      printf("\nLado 1:\n");
+    }
+    printf(" Pista %d \n", pistas[i].num_pista);
+    CARRO* c = pistas[i].inicio;
+    while (c != NULL) {
+      printf("  - Carro %d\n", c->num);
+      c = c->prox;
+    }
   }
 }
 
@@ -142,17 +139,17 @@ void print_pistas(PISTA* pistas) {
 void contar_fila_carros(PISTA* pistas) {
   int cont;
   printf("Lado 0:\n");
-  for(int i=0; i< NPISTAS; i++) {
-	cont = 0;
-	CARRO* aux = pistas[i].inicio;
-	while (aux != NULL) {
-  	cont++;
-  	aux = aux->prox;
-	}
-    if(i == NPISTAS/2){
-      	printf("\nLado 1:\n");
-  	}
-	printf(" Pista %d: %d carros\n", pistas[i].num_pista, cont);
+  for (int i = 0; i < NPISTAS; i++) {
+    cont = 0;
+    CARRO* aux = pistas[i].inicio;
+    while (aux != NULL) {
+      cont++;
+      aux = aux->prox;
+    }
+    if (i == NPISTAS / 2) {
+      printf("\nLado 1:\n");
+    }
+    printf(" Pista %d: %d carros\n", pistas[i].num_pista, cont);
   }
 }
 
@@ -166,34 +163,33 @@ void fechar_ponte(PISTA* pistas, int* controls, int lado) {
 }
 
 // Funcao principal executada por cada processo
-void cruzar_ponte(PISTA* pistas, CARRO* carro, CARRO* carros_base,int* controls) {
+void cruzar_ponte(PISTA* pistas, CARRO* carro, CARRO* carros_base, int* controls) {
   int num;
   sem_t* current_sem;
   int* current_control;
-  if(carro->lado == 0 ){
-  	current_sem = sem0;
-  	current_control = &controls[1];
-  }
-  else{
-  	current_sem = sem1;
-  	current_control = &controls[2];
+  if (carro->lado == 0) {
+    current_sem = sem0;
+    current_control = &controls[1];
+  } else {
+    current_sem = sem1;
+    current_control = &controls[2];
   }
   while (1) {
-	if (controls[1] == 0 && carro->pode_passar == 1) {
-  	num = carro->num;
-  	*current_control = 1;
-  	sem_wait(current_sem);
-  	printf("(lado %d) Carro %d cruzou a ponte\n", carro->lado, carro->num);
-  	remover_carro(pistas, carros_base, carro);
-  	controls[0]++;
-  	if (controls[0] % TRAVAR_PONTE == 0) {
- 		 fechar_ponte(pistas, controls, carro->lado);
-  	}
-  	sleep(FLUXO_CARROS);
-  	sem_post(current_sem);
-  	*current_control = 0;
-  	break;
-	}
+    if (controls[1] == 0 && carro->pode_passar == 1) {
+      num = carro->num;
+      *current_control = 1;
+      sem_wait(current_sem);
+      printf("(lado %d) Carro %d cruzou a ponte\n", carro->lado, carro->num);
+      remover_carro(pistas, carros_base, carro);
+      controls[0]++;
+      if (controls[0] % TRAVAR_PONTE == 0) {
+        fechar_ponte(pistas, controls, carro->lado);
+      }
+      sleep(FLUXO_CARROS);
+      sem_post(current_sem);
+      *current_control = 0;
+      break;
+    }
   }
   kill(getpid(), SIGKILL);
 }
@@ -203,51 +199,49 @@ void iniciar_processos(PISTA* pistas, int* controls, CARRO* carros_base) {
   pid_t pid;
   PISTA* aux_pista = pistas;
   for (int i = 0; i < NPISTAS; i++) {
-	CARRO* lista_carros_pista = &carros_base[i * NPROCESS];
-	for (int j = 0; j < NPROCESS; j++) {
-  	pid = fork();
-  	if (pid > 0) {
-  	} else if (pid == 0) {
-    	cruzar_ponte(pistas, &lista_carros_pista[j], carros_base, controls);
-  	} else if (pid < 0) {
-    	printf("Erro na criacao do processo!");
-  	}
-	}
+    CARRO* lista_carros_pista = &carros_base[i * NPROCESS];
+    for (int j = 0; j < NPROCESS; j++) {
+      pid = fork();
+      if (pid > 0) {
+      } else if (pid == 0) {
+        cruzar_ponte(pistas, &lista_carros_pista[j], carros_base, controls);
+      } else if (pid < 0) {
+        printf("Erro na criacao do processo!");
+      }
+    }
   }
 }
 
 // Esperar processos finalizarem
 void esperar_processos() {
   for (int i = 0; i < NPROCESS * NPISTAS; i++) {
-	wait(NULL);
+    wait(NULL);
   }
 }
 
 int main() {
-    
   if (NPISTAS < 1) {
-	printf("Numero de pistas precisa ser maior do que 0");
-	return -1;
+    printf("Numero de pistas precisa ser maior do que 0");
+    return -1;
   }
   if (NPROCESS < 1) {
-	printf("Numero de threads precisa ser maior do que 0");
-	return -1;
+    printf("Numero de threads precisa ser maior do que 0");
+    return -1;
   }
- 
-  int shmid = shmget(
-  PISTAS_KEY, sizeof(PISTA) * NPISTAS + sizeof(CARRO) * NPISTAS * NPROCESS,0666 | IPC_CREAT);
+
+  int shmid = shmget(PISTAS_KEY, sizeof(PISTA) * NPISTAS + sizeof(CARRO) * NPISTAS * NPROCESS, 0666 | IPC_CREAT);
   void* shm;
- 
+
   if (shmid < 0) {
-	printf("Erro na criacao da memoria compartilhada de pistas");
-	exit(1);
+    printf("Erro na criacao da memoria compartilhada de pistas");
+    exit(1);
   }
 
   if ((shm = shmat(shmid, 0, 0)) < 0) {
-	printf("Erro na alocacao da memoria compartilhada de pistas");
-	exit(1);
+    printf("Erro na alocacao da memoria compartilhada de pistas");
+    exit(1);
   }
- 
+
   PISTA* pistas = (PISTA*)shm;
   CARRO* carros_base = (CARRO*)(pistas + NPISTAS);  // Aritmética de ponteiros de PISTA
 
@@ -255,21 +249,21 @@ int main() {
   int* controls;
 
   if (shmid < 0) {
-	printf("Erro na criacao da memoria compartilhada de controle");
-	exit(1);
+    printf("Erro na criacao da memoria compartilhada de controle");
+    exit(1);
   }
 
   if ((controls = shmat(shmid, 0, 0)) < 0) {
-	printf("Erro na alocacao da memoria de controle");
-	exit(1);
+    printf("Erro na alocacao da memoria de controle");
+    exit(1);
   }
   sem0 = sem_open("/process_semaphore0", O_CREAT, 0644, 1);
   sem1 = sem_open("/process_semaphore1", O_CREAT, 0644, 1);
   if (sem0 == SEM_FAILED || sem1 == SEM_FAILED) {
-	printf("Erro na criacao do semaphore");
-	exit(1);
+    printf("Erro na criacao do semaphore");
+    exit(1);
   }
- 
+
   iniciar_pistas(pistas);
   encher_pistas(pistas, carros_base);
   print_pistas(pistas);
@@ -282,6 +276,3 @@ int main() {
   shmdt(controls);
   return 0;
 }
-
-
-
